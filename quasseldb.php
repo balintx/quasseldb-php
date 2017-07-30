@@ -53,7 +53,7 @@ class QuasselDB
 	private $buffers; // This should never be public as internal search functions trust it
 	var $user_id;
 	
-	function Connect($db_credentials, $db_type = 'pgsql')
+	function Connect(array $db_credentials, $db_type = 'pgsql')
 	{
 		/*
 			This function's return value must be checked with strict comparison: (QuasselDB::Connect(...) === true) -> connetion succeeded
@@ -126,9 +126,7 @@ class QuasselDB
 	{
 		/*
 			Returns authenticated user's buffers and saves in QuasselDB::buffers
-			Usage:
-			foreach (QuasselDB::Get_Buffers() as $networkid => $bufferdata)
-				list($bufferid, $buffername) = $bufferdata;
+			For usage, check QuasselDB::Is_VisibleBuffer
 		*/
 		
 		$this->buffers = [];
@@ -180,7 +178,7 @@ class QuasselDB
 		return $messages;
 	}
 	
-	function Search($search_array, $buffers, $types = QuasselDB_Constants::BacklogEntry_Type_All)
+	function Search(array $search_array, array $buffers, array $types = QuasselDB_Constants::BacklogEntry_Type_All)
 	{
 		/*
 			First parameter is an array with search options,
@@ -234,6 +232,36 @@ class QuasselDB
 		return $results;
 	}
 	
+	/*
+		! RISK !
+		Security disclaimer for Get_Sender*: 
+		
+		These functions do not check whether the sender is visible to the user.
+		
+		Do not expose their return values in your application, only use them to
+		associate senderids returned by QuasselDB::Get_MessagesNearID() or QuasselDB::Search()
+		
+		The only method we could check the senderid visibility with has serious
+		performance issues, it takes 1-2 seconds per id so it can not be used in our code.
+		
+		quassel=# select (select count(*) from backlog where bufferid in (select bufferid from buffer where userid=3) and senderid=142) > 0;
+		 ?column?
+		----------
+		 t
+		(1 row)
+
+		Time: 1813.115 ms
+		
+		
+		quassel=# select (select count(*) from buffer where bufferid in (select bufferid from backlog where senderid=151) and userid=3) > 0;
+		 ?column?
+		----------
+		 t
+		(1 row)
+
+		Time: 1836.385 ms
+
+	*/	
 	function Get_SenderID($sendernick)
 	{
 		/*
@@ -244,15 +272,41 @@ class QuasselDB
 		$results = $query->fetchAll(PDO::FETCH_COLUMN);
 		$query->closeCursor();
 		return $results;
+	}	
+	function Get_Sender(array $senderids)
+	{
+		/*
+			Returned array's keys are the ids, values are the strings associated with them
+			You may chose not to use the keys without editing this code
+		*/
+		$senderids = $this->Filter_NumericValues($senderids);
+		$senderids = implode(', ', $senderids);
+		$rows = $this->db->prepare("SELECT senderid, sender FROM sender WHERE senderid IN ($senderids)");
+		$senders = [];
+		foreach ($rows as $sender)
+		{
+			$senders[$sender[0]] = $sender[1];
+		}
+		return $senders;
 	}
 	
-	function Get_Sender($senderid)
+	// Get_Network returns only visible networks
+	function Get_Network(array $networkids)
 	{
-		$query = $this->db->prepare("SELECT sender FROM sender WHERE senderid = ?");
-		$query->execute([$senderid]);
-		$sender = $query->fetchColumn();
-		$query->closeCursor();
-		return $sender;
+		/*
+			Returned array's keys are the ids, values are the strings associated with them
+			You may chose not to use the keys without editing this code
+		*/
+		$networkids = $this->Filter_NumericValues($networkids);
+		$networkids = implode(', ', $networkids);
+		$query = $this->db->prepare("SELECT networkid, networkname FROM network WHERE userid = ? AND networkid IN ($networkids)");
+		$query->execute([$this->user_id]);
+		$networks = [];
+		foreach ($query->fetchAll() as $network)
+		{
+			$networks[$network[0]] = $network[1];
+		}
+		return $networks;
 	}
 	
 	function Filter_VisibleBuffers($buffers)
