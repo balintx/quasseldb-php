@@ -165,7 +165,7 @@ class QuasselDB
 		if (!$this->Is_VisibleBuffer($bufferid)) return [];
 		if (!is_numeric($proximity) || $proximity < 0) $proximity = 10;
 		
-		$query = $this->db->prepare("SELECT * from backlog WHERE bufferid = ? AND messageid <= ? ORDER BY messageid DESC LIMIT $proximity");
+		$query = $this->db->prepare('SELECT * from backlog WHERE bufferid = ? AND messageid <= ? ORDER BY messageid DESC LIMIT '.$proximity + 1);
 		$query->execute([$bufferid, $messageid]);
 		$messages = $query->fetchAll(PDO::FETCH_ASSOC);
 		$query->closeCursor();
@@ -350,7 +350,7 @@ class QuasselDB
 	{
 		/*
 			If your application needs to check the old password before changing it (which is recommended),
-			pass the old password as the third parameter. It will only change the password if the old is correct.
+			pass the old password as the second parameter. It will only change the password if the old one is correct.
 		*/
 		if (!$this->user_id) return false;
 		if (NULL !== $old_password)
@@ -384,7 +384,7 @@ class QuasselDB
         return $query->execute([$hash, $hashversion, $this->user_id]);
 	}
 	
-	function CreateUser($username, $password)
+	function Create_User($username, $password)
 	{
 		/*
 			It is recommended to limit the usage of this function to specific users in your application
@@ -409,14 +409,14 @@ class QuasselDB
         return true;
 	}
 	
-	function DeactivateUser($username)
+	function Deactivate_User($username)
 	{
 		/*
 			It is recommended to limit the usage of this function to specific users in your application
 			(list of admin usernames, for example)
 			
 			This function does not delete any entries, just prevents login and auto-reconnecting to servers.
-			It is recommended to perform a core restart just after using QuasselDB::DeactivateUser()
+			It is recommended to perform a core restart just after using QuasselDB::Deactivate_User()
 			
 			The effect of this function can be reversed with QuasselDB::ActivateUser()
 		*/
@@ -432,7 +432,7 @@ class QuasselDB
 		return true;
 	}
 	
-	function ActivateUser($username)
+	function Activate_User($username)
 	{
 		/*
 			Make user able to login again after being deactivated with their old password.
