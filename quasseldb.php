@@ -183,7 +183,7 @@ class QuasselDB
 		/*
 			First parameter is an array with search options,
 			where key is one of QuasselDB_Constants::Search_* and value is the search subject.
-			For QuasselDB_Constants::Search_ByDate search subject is an array containing two UNIX timestamps.
+			For QuasselDB_Constants::Search_Date search subject is an array containing two UNIX timestamps.
 		*/
 		
 		$buffers = $this->Filter_VisibleBuffers($buffers);
@@ -281,7 +281,7 @@ class QuasselDB
 		*/
 		$senderids = $this->Filter_NumericValues($senderids);
 		$senderids = implode(', ', $senderids);
-		$rows = $this->db->prepare("SELECT senderid, sender FROM sender WHERE senderid IN ($senderids)");
+		$rows = $this->db->query("SELECT senderid, sender FROM sender WHERE senderid IN ($senderids)");
 		$senders = [];
 		foreach ($rows as $sender)
 		{
