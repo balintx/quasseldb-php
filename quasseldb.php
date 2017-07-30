@@ -165,7 +165,7 @@ class QuasselDB
 		if (!$this->Is_VisibleBuffer($bufferid)) return [];
 		if (!is_numeric($proximity) || $proximity < 0) $proximity = 10;
 		
-		$query = $this->db->prepare('SELECT * from backlog WHERE bufferid = ? AND messageid <= ? ORDER BY messageid DESC LIMIT '.$proximity + 1);
+		$query = $this->db->prepare('SELECT * from backlog WHERE bufferid = ? AND messageid <= ? ORDER BY messageid DESC LIMIT '.($proximity + 1));
 		$query->execute([$bufferid, $messageid]);
 		$messages = $query->fetchAll(PDO::FETCH_ASSOC);
 		$query->closeCursor();
