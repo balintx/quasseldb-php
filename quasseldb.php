@@ -277,7 +277,7 @@ class QuasselDB
 	{
 		/*
 			Returned array's keys are the ids, values are the strings associated with them
-			You may chose not to use the keys without editing this code
+			You may choose not to use the keys without editing this code
 		*/
 		$senderids = $this->Filter_NumericValues($senderids);
 		$senderids = implode(', ', $senderids);
@@ -295,7 +295,7 @@ class QuasselDB
 	{
 		/*
 			Returned array's keys are the ids, values are the strings associated with them
-			You may chose not to use the keys without editing this code
+			You may choose not to use the keys without editing this code
 		*/
 		$networkids = $this->Filter_NumericValues($networkids);
 		$networkids = implode(', ', $networkids);
@@ -390,19 +390,19 @@ class QuasselDB
 			It is recommended to limit the usage of this function to specific users in your application
 			(list of admin usernames, for example)
 		*/
-        if (!$username || !preg_match("/^([a-zA-Z0-9]*)$/", $username)) return false;
+		if (!$username || !preg_match("/^([a-zA-Z0-9]*)$/", $username)) return false;
 
-        $exists = $this->db->prepare("SELECT userid FROM quasseluser WHERE username = ?");
-        $exists->execute([$username]);
-        if ($exists->rowCount() > 0) return false;
-        unset($exists);
+		$exists = $this->db->prepare("SELECT userid FROM quasseluser WHERE username = ?");
+		$exists->execute([$username]);
+		if ($exists->rowCount() > 0) return false;
+		unset($exists);
 
-        $create = $this->db->prepare("INSERT INTO quasseluser (username, password, hashversion) VALUES (?, 'x', 0)");
-        $create->execute([$username]);
-        unset($create);
-		
+		$create = $this->db->prepare("INSERT INTO quasseluser (username, password, hashversion) VALUES (?, 'x', 0)");
+		$create->execute([$username]);
+		unset($create);
+
 		$current_user_id = $this->user_id;
-		$this->user_id = $this->Get_Username($username);
+		$this->user_id = $this->Get_UserID($username);
 		$this->Change_Password($password);
 		$this->user_id = $current_user_id;
 		
