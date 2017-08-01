@@ -92,7 +92,7 @@ $results = $qdb->Search(
 );
 ```
 ### Search by nick
-> We search the last 150 backlog entries related to _paul_ on buffer 1324
+> Retrieving the last 150 backlog entries related to _paul_ on buffer 1324:
 ```php
 $results = $qdb->Search(
     [QuasselDB_Constants::Search_Sender => 'paul'],
@@ -175,7 +175,7 @@ array(4) {
 }
 ```
 ### Searching messages near a given messageid
-The code below will retrieve the backlog entry on the given buffer (1324) with the given messageid (22271562), plus the previous and next 15 entries
+The code below will retrieve the backlog entry on the given buffer (1324) with the given messageid (22271562), plus the previous and next 15 entries:
 ```php
 $entries = $qdb->Get_MessagesNearID(22271562, 1324, 15);
 ```
@@ -191,7 +191,7 @@ If you need the next and previous 15 entries:
 ```php
 $entries = $qdb->Get_MessagesNearID(22271562, 1324, 15, QuasselDB_Constants::Direction_Previous | QuasselDB_Constants::Direction_Next);
 ```
-If you need the next 15 entries plus the original message (22271562):
+If you need the previous 15 entries plus the original message (22271562):
 ```php
 $entries = $qdb->Get_MessagesNearID(22271562, 1324, 15, QuasselDB_Constants::Direction_Previous | QuasselDB_Constants::Original_Message);
 ```
