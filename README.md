@@ -64,11 +64,12 @@ foreach ($my_buffers as $networkid => $buffers)
 ```
 ## Searching in backlog
 ### Search by message
-> Search for the string "was me" in buffers 13, 14, 67 among PRIVMSG and NOTICE texts
+> Search for the string "was me" in buffers 13, 14, 67 among PRIVMSG and NOTICE texts and getting the last 15 results:
 ```php
 $results = $qdb->Search(
     [QuasselDB_Constants::Search_String => 'was me'],
     [13, 14, 67],
+    15,
     [QuasselDB_Constants::BacklogEntry_Type_Plain, QuasselDB_Constants::BacklogEntry_Type_Notice]
 );
 ```
@@ -86,15 +87,17 @@ $results = $qdb->Search(
         QuasselDB_Constants::Search_Date => $dates
     ],
     [13, 14, 67],
+    15,
     [QuasselDB_Constants::BacklogEntry_Type_Plain, QuasselDB_Constants::BacklogEntry_Type_Notice]
 );
 ```
 ### Search by nick
-> We search everything related to _paul_ on buffer 1324
+> We search the last 150 backlog entries related to _paul_ on buffer 1324
 ```php
 $results = $qdb->Search(
     [QuasselDB_Constants::Search_Sender => 'paul'],
-    [1324]
+    [1324],
+    150
 );
 var_dump($results);
 ```
@@ -176,6 +179,32 @@ The code below will retrieve the backlog entry on the given buffer (1324) with t
 ```php
 $entries = $qdb->Get_MessagesNearID(22271562, 1324, 15);
 ```
+If you need only the previous 15 entries:
+```php
+$entries = $qdb->Get_MessagesNearID(22271562, 1324, 15, QuasselDB_Constants::Direction_Previous);
+```
+If you need only the next 15 entries:
+```php
+$entries = $qdb->Get_MessagesNearID(22271562, 1324, 15, QuasselDB_Constants::Direction_Next);
+```
+If you need the next and previous 15 entries:
+```php
+$entries = $qdb->Get_MessagesNearID(22271562, 1324, 15, QuasselDB_Constants::Direction_Previous | QuasselDB_Constants::Direction_Next);
+```
+If you need the next 15 entries plus the original message (22271562):
+```php
+$entries = $qdb->Get_MessagesNearID(22271562, 1324, 15, QuasselDB_Constants::Direction_Previous | QuasselDB_Constants::Original_Message);
+```
+If you need the message with the given messageid:
+```php
+$entries = $qdb->Get_MessagesNearID(22271562, 1324);
+```
+or
+```php
+// same as above
+$entries = $qdb->Get_MessagesNearID(22271562, 1324, 0, QuasselDB_Constants::Original_Message);
+```
+
 
 ## Changing authenticated user's password
 ```html
