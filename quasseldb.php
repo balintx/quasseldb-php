@@ -6,6 +6,10 @@ abstract class QuasselDB_Constants
 	const Search_Sender = 2;
 	const Search_Date = 3;
 	
+	const Direction_Previous = 1 << 0;
+	const Direction_Next = 1 << 1;
+	const Original_Message = 1 << 2;
+	
 	const BacklogEntry_Type_Plain = 0x00001;
 	const BacklogEntry_Type_Notice = 0x00002;
 	const BacklogEntry_Type_Action = 0x00004;
@@ -25,7 +29,7 @@ abstract class QuasselDB_Constants
 	const BacklogEntry_Type_NetsplitQuit = 0x10000;
 	const BacklogEntry_Type_Invite = 0x20000;
 	
-	const BacklogEntry_Type_All = [
+	const BacklogEntry_All_Types = [
 		self::BacklogEntry_Type_Plain,
 		self::BacklogEntry_Type_Notice,
 		self::BacklogEntry_Type_Action,
@@ -160,25 +164,39 @@ class QuasselDB
 		return false;
 	}
 	
-	function Get_MessagesNearID($messageid, $bufferid, $proximity = 10)
+	function Get_MessagesNearID($messageid, $bufferid, $proximity = 0, $direction_flags = QuasselDB_Constants::Direction_Previous | QuasselDB_Constants::Direction_Next | QuasselDB_Constants::Original_Message)
 	{
 		if (!$this->Is_VisibleBuffer($bufferid)) return [];
-		if (!is_numeric($proximity) || $proximity < 0) $proximity = 10;
+		if (!is_numeric($proximity) || $proximity < 0) $proximity = 0;
+		if ($proximity == 0) $direction_flags = QuasselDB_Constants::Original_Message;
 		
-		$query = $this->db->prepare('SELECT * from backlog WHERE bufferid = ? AND messageid <= ? ORDER BY messageid DESC LIMIT '.($proximity + 1));
-		$query->execute([$bufferid, $messageid]);
-		$messages = $query->fetchAll(PDO::FETCH_ASSOC);
-		$query->closeCursor();
-		$messages = array_reverse($messages);
-		$query = $this->db->prepare("SELECT * from backlog WHERE bufferid = ? AND messageid > ? ORDER BY messageid ASC LIMIT $proximity");
-		$query->execute([$bufferid, $messageid]);
-		$messages = array_merge($messages, $query->fetchAll(PDO::FETCH_ASSOC));
-		$query->closeCursor();
-		
+		$messages = [];
+		if ($direction_flags & QuasselDB_Constants::Direction_Previous)
+		{
+			$query = $this->db->prepare("SELECT * from backlog WHERE bufferid = ? AND messageid < ? ORDER BY messageid DESC LIMIT $proximity");
+			$query->execute([$bufferid, $messageid]);
+			$messages = $query->fetchAll(PDO::FETCH_ASSOC);
+			$messages = array_reverse($messages);
+			$query->closeCursor();
+		}
+		if ($direction_flags & QuasselDB_Constants::Original_Message)
+		{
+			$query = $this->db->prepare("SELECT * from backlog WHERE bufferid = ? AND messageid = ? LIMIT 1");
+			$query->execute([$bufferid, $messageid]);
+			$messages[] = $query->fetch(PDO::FETCH_ASSOC);
+			$query->closeCursor();
+		}
+		if ($direction_flags & QuasselDB_Constants::Direction_Next)
+		{
+			$query = $this->db->prepare("SELECT * from backlog WHERE bufferid = ? AND messageid > ? ORDER BY messageid ASC LIMIT $proximity");
+			$query->execute([$bufferid, $messageid]);
+			$messages = array_merge($messages, $query->fetchAll(PDO::FETCH_ASSOC));
+			$query->closeCursor();
+		}
 		return $messages;
 	}
 	
-	function Search(array $search_array, array $buffers, array $types = QuasselDB_Constants::BacklogEntry_Type_All)
+	function Search(array $search_array, array $buffers, $limit = 30, array $types = QuasselDB_Constants::BacklogEntry_All_Types)
 	{
 		/*
 			First parameter is an array with search options,
@@ -225,7 +243,9 @@ class QuasselDB
 			}
 		}
 		if (!$found) return [];
-		$query = $this->db->prepare("SELECT * FROM backlog WHERE bufferid IN ($buffers) AND type IN ($types)$condition");
+		
+		if (!is_numeric($limit) || $limit < 1) $limit = 30;
+		$query = $this->db->prepare("SELECT * FROM backlog WHERE bufferid IN ($buffers) AND type IN ($types)$condition ORDER BY messageid DESC LIMIT $limit");
 		$query->execute($parameters);
 		$results = $query->fetchAll(PDO::FETCH_ASSOC);
 		$query->closeCursor();
